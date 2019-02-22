@@ -1,35 +1,68 @@
 ## Description
 
-Nest 的 redis 模块，使用 ioredis
+NestJs 的 redis 模块，使用 ioredis
 
-## Installation
+## Basic usage
 
-```bash
-$ npm install
+```typescript
+import { Module } from '@nestjs/common';
+import { RedisModule } from './redis.module';
+
+@Module({
+  imports: [RedisModule.forRoot({
+    host: '127.0.0.1',
+    port: 6379,
+    password: '123456',
+  })]
+})
+export class AppModule {
+  
+}
 ```
 
-## Running the app
+## Connection Decorators
 
-```bash
-# development
-$ npm run start
+```typescript
+import { Module } from '@nestjs/common';
+import { RedisModule } from './redis.module';
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+@Module({
+  imports: [RedisModule.forRoot([
+    {
+      host: '127.0.0.1',
+      port: 6379,
+      password: '123456',
+    },
+    {
+      name: 'test',
+      host: '127.0.0.1',
+      port: 6379,
+      password: '123456',
+     }
+  ])]
+})
+export class AppModule {
+  
+}
 ```
 
-## Test
+```typescript
+import {Injectable, Module } from '@nestjs/common';
+import { InjectRedisClient } from './index';
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+@Injectable()
+export class TestService {
+  constructor(
+    @InjectRedisClient('test') private redisClient: Redis.Redis,
+    @InjectRedisClient('0') private redisClient0: Redis.Redis,
+  ) {}
+  
+  getClient() {
+    return this.redisClient;
+  }
+  
+  getClient0() {
+    return this.redisClient0;
+  }
+}
 ```
