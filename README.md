@@ -6,7 +6,7 @@ NestJs 的 redis 模块，使用 ioredis
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { RedisModule } from './redis.module';
+import { RedisModule } from 'nestjs-ioredis';
 
 @Module({
   imports: [RedisModule.forRoot({
@@ -24,7 +24,7 @@ export class AppModule {
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { RedisModule } from './redis.module';
+import { RedisModule } from 'nestjs-ioredis';
 
 @Module({
   imports: [RedisModule.forRoot([
@@ -48,7 +48,8 @@ export class AppModule {
 
 ```typescript
 import {Injectable, Module } from '@nestjs/common';
-import { InjectRedisClient } from './index';
+import { InjectRedisClient } from 'nestjs-ioredis';
+import * as Redis from 'ioredis'
 
 @Injectable()
 export class TestService {

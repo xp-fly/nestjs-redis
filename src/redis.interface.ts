@@ -3,7 +3,7 @@ export interface RedisClientOptions {
     host: string; // 地址
     password: string; // 密码
     family?: number;
-    db?: boolean;
+    db?: number;
 }
 
 export interface RedisModuleOptions extends RedisClientOptions {
