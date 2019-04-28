@@ -16,29 +16,41 @@ export class RedisProvider {
 
     /**
      * 获取所有的 redis 连接的 provider 数组
-     * @param options
+     * @param {RedisModuleOptions[]} options
+     * @param {Provider} optionProvider
+     * @return {Provider[]}
      */
-    public static init(options: RedisModuleOptions[]): Provider[] {
-        return options.map(option => this.createRedisClientProvider(option));
+    public static init(options: RedisModuleOptions[], optionProvider: Provider): Provider[] {
+        return options.map(option => this.createRedisClientProvider(option, optionProvider));
     }
 
     /**
      * 得到 redis 客户端连接的 provider
-     * @param option
+     * @param {RedisModuleOptions} option
+     * @param optionProvider
+     * @return {Provider}
      */
-    private static createRedisClientProvider(option: RedisModuleOptions): Provider {
+    private static createRedisClientProvider(option: RedisModuleOptions, optionProvider): Provider {
         const token = createClientToken(option.name);
         let client: Redis.Redis;
         if (clients.get(token)) {
             client = clients.get(token);
+            return {
+                provide: token,
+                useValue: client,
+            };
         } else {
-            client = this.createClient(option);
-            clients.set(token, client);
+            return {
+                provide: token,
+                useFactory: (config) => {
+                    option = {...option, ...config};
+                    client =  this.createClient(option);
+                    clients.set(token, client);
+                    return client;
+                },
+                inject: [optionProvider],
+            };
         }
-        return {
-            provide: token,
-            useValue: client,
-        };
     }
 
     public static getClients() {

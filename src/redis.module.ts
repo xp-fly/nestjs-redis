@@ -1,7 +1,7 @@
-import {DynamicModule, Module} from '@nestjs/common';
+import {DynamicModule, Module, Provider} from '@nestjs/common';
 import { RedisProvider } from './redis.provider';
-import { RedisModuleOptions } from './redis.interface';
-import { REDIS_CLIENT_DEFAULT_KEY } from './redis.constant';
+import {RedisModuleAsyncOption, RedisModuleOptions} from './redis.interface';
+import {REDIS_CLIENT_DEFAULT_KEY, REDIS_CLIENT_MODULE_OPTIONS} from './redis.constant';
 
 @Module({})
 export class RedisModule {
@@ -10,8 +10,22 @@ export class RedisModule {
      * @param options
      */
     static forRoot(options: RedisModuleOptions | RedisModuleOptions[]): DynamicModule {
-        const redisClientProviders = RedisProvider.init(this.resolveOptions(options));
+        options = Array.isArray(options) ? options : [options];
+        const optionProvider: Provider = this.createAsyncOptionsProvider({
+            useValue: options,
+        });
+        const redisClientProviders = RedisProvider.init(this.resolveOptions(options), optionProvider);
 
+        return {
+            module: RedisModule,
+            providers: redisClientProviders,
+            exports: redisClientProviders,
+        };
+    }
+
+    static registerAsync(options: RedisModuleOptions | RedisModuleOptions[], injectOption: RedisModuleAsyncOption) {
+        const optionProvider = this.createAsyncOptionsProvider(injectOption);
+        const redisClientProviders = RedisProvider.init(this.resolveOptions(options), optionProvider);
         return {
             module: RedisModule,
             providers: redisClientProviders,
@@ -43,5 +57,19 @@ export class RedisModule {
         });
 
         return options;
+    }
+
+    /**
+     * 生成配置提供者
+     * @param {RedisModuleAsyncOption} options
+     * @return {Provider}
+     */
+    private static createAsyncOptionsProvider(options: RedisModuleAsyncOption): Provider {
+        return {
+            provide: REDIS_CLIENT_MODULE_OPTIONS,
+            useValue: options.useValue,
+            useFactory: options.useFactory,
+            inject: options.inject || [],
+        };
     }
 }

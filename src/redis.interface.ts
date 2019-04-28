@@ -9,3 +9,9 @@ export interface RedisClientOptions {
 export interface RedisModuleOptions extends RedisClientOptions {
     name?: string; // 连接名称 默认 default
 }
+
+export interface RedisModuleAsyncOption {
+    useValue?: RedisModuleOptions[];
+    useFactory?: (...args: any[]) => RedisModuleOptions[]; // 生成options的构造函数
+    inject?: any[]; // 注入
+}
