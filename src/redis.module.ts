@@ -10,25 +10,29 @@ export class RedisModule {
      * @param options
      */
     static forRoot(options: RedisModuleOptions | RedisModuleOptions[]): DynamicModule {
-        options = Array.isArray(options) ? options : [options];
         const optionProvider: Provider = this.createAsyncOptionsProvider({
-            useValue: options,
+            useValue: Array.isArray(options) ? options : [options],
         });
-        const redisClientProviders = RedisProvider.init(this.resolveOptions(options), optionProvider);
+        const redisClientProviders = RedisProvider.init(this.resolveOptions(options));
 
         return {
             module: RedisModule,
-            providers: redisClientProviders,
+            providers: [optionProvider, ...redisClientProviders],
             exports: redisClientProviders,
         };
     }
 
-    static registerAsync(options: RedisModuleOptions | RedisModuleOptions[], injectOption: RedisModuleAsyncOption) {
+    /**
+     * 异步获取redis客户端
+     * @param options
+     * @param injectOption
+     */
+    static forAsync(options: RedisModuleOptions | RedisModuleOptions[], injectOption: RedisModuleAsyncOption) {
         const optionProvider = this.createAsyncOptionsProvider(injectOption);
-        const redisClientProviders = RedisProvider.init(this.resolveOptions(options), optionProvider);
+        const redisClientProviders = RedisProvider.init(this.resolveOptions(options));
         return {
             module: RedisModule,
-            providers: redisClientProviders,
+            providers: [optionProvider, ...redisClientProviders],
             exports: redisClientProviders,
         };
     }
@@ -36,10 +40,11 @@ export class RedisModule {
     /**
      * 返回所有的 redis 连接
      */
-    static forFeature() {
+    static forFeature(clientNames: string[]) {
+        clientNames = clientNames.length ? clientNames : [REDIS_CLIENT_DEFAULT_KEY];
         return {
             module: RedisModule,
-            providers: RedisProvider.getClients(),
+            providers: RedisProvider.getClients(clientNames),
         };
     }
 

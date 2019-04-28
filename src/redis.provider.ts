@@ -1,7 +1,9 @@
 import * as Redis from 'ioredis';
 import { RedisClientOptions, RedisModuleOptions } from './redis.interface';
-import { Provider } from '@nestjs/common';
+import { NotFoundException, Provider } from '@nestjs/common';
 import { createClientToken } from './utils/create.token';
+import { REDIS_CLIENT_MODULE_OPTIONS } from './redis.constant';
+import { create } from 'domain';
 
 const clients: Map<string, Redis.Redis> = new Map();
 
@@ -20,8 +22,8 @@ export class RedisProvider {
      * @param {Provider} optionProvider
      * @return {Provider[]}
      */
-    public static init(options: RedisModuleOptions[], optionProvider: Provider): Provider[] {
-        return options.map(option => this.createRedisClientProvider(option, optionProvider));
+    public static init(options: RedisModuleOptions[]): Provider[] {
+        return options.map(option => this.createRedisClientProvider(option));
     }
 
     /**
@@ -30,7 +32,7 @@ export class RedisProvider {
      * @param optionProvider
      * @return {Provider}
      */
-    private static createRedisClientProvider(option: RedisModuleOptions, optionProvider): Provider {
+    private static createRedisClientProvider(option: RedisModuleOptions): Provider {
         const token = createClientToken(option.name);
         let client: Redis.Redis;
         if (clients.get(token)) {
@@ -42,19 +44,32 @@ export class RedisProvider {
         } else {
             return {
                 provide: token,
-                useFactory: (config) => {
+                useFactory: (options: RedisModuleOptions[]) => {
+                    const config = options.find(item => item.name === option.name);
                     option = {...option, ...config};
                     client =  this.createClient(option);
                     clients.set(token, client);
                     return client;
                 },
-                inject: [optionProvider],
+                inject: [REDIS_CLIENT_MODULE_OPTIONS],
             };
         }
     }
 
-    public static getClients() {
-        return clients.values();
+    public static getClients(clientNames: string[]): Provider[] {
+        const providers: Provider[] = [];
+        for (const name of clientNames) {
+            const token = createClientToken(name);
+            if (!clients.get(token)) {
+                throw new NotFoundException(`redis client not fount, please register first. name: ${name}`);
+            } else {
+                providers.push({
+                    provide: token,
+                    useValue: clients.get(name),
+                });
+            }
+        }
+        return providers;
     }
 
 }

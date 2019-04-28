@@ -18,6 +18,18 @@ import { RedisModule } from 'nestjs-ioredis';
 export class AppModule {
   
 }
+
+or
+
+@Module({
+  imports: [RedisModule.forAsync({}, {
+    useFactory: configService => configService.get('redis'),
+    inject: [ConfigService]
+  })]
+})
+export class AppModule {
+  
+}
 ```
 
 ## Connection Decorators
